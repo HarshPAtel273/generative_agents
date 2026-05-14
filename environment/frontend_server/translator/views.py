@@ -14,7 +14,7 @@ from django.shortcuts import render, redirect, HttpResponseRedirect
 from django.http import HttpResponse, JsonResponse
 from global_methods import *
 
-from django.contrib.staticfiles.templatetags.staticfiles import static
+from django.templatetags.static import static
 from .models import *
 
 def landing(request): 

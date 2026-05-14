@@ -340,16 +340,16 @@ class Scratch:
     for task, duration in self.f_daily_schedule_hourly_org: 
       x += duration
 
-    # We then calculate the current index based on that. 
+    # We then calculate the current index based on that.
     curr_index = 0
     elapsed = 0
-    for task, duration in self.f_daily_schedule: 
+    for task, duration in self.f_daily_schedule:
       elapsed += duration
-      if elapsed > today_min_elapsed: 
+      if elapsed > today_min_elapsed:
         return curr_index
       curr_index += 1
 
-    return curr_index
+    return max(0, len(self.f_daily_schedule) - 1) if self.f_daily_schedule else 0
 
 
   def get_f_daily_schedule_hourly_org_index(self, advance=0):

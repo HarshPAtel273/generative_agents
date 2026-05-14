@@ -15,7 +15,15 @@ To set up your environment, you will need to generate a `utils.py` file that con
 In the `reverie/backend_server` folder (where `reverie.py` is located), create a new file titled `utils.py` and copy and paste the content below into the file:
 ```
 # Copy and paste your OpenAI API Key
-openai_api_key = "<Your OpenAI API>"
+openai_api_key = "<Your OpenAI API>" 
+# if you are using cloud or local API (e.g., Ollama, vLLM, etc.) use openai_api_url and openai_api_model instead of the official OpenAI API key and model name.
+openai_api_url = "http://localhost:8015/v1" # for vllm or "http://localhost:11434/v1" if you are running Ollama locally
+openai_api_model = "<Your LLM model>"
+
+# If you are using a local API for embeddings, use the following two variables to specify the embedding model and URL.
+openai_api_embedding_model = "nomic-embed-text"
+openai_api_embedding_url = "http://localhost:11434/v1" # local Ollama for embeddings
+openai_api_embedding_key = "ollama"  # or whatever key local Ollama expects
 # Put your name
 key_owner = "<Name>"
 

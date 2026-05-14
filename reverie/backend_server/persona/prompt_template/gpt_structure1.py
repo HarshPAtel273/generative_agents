@@ -2,82 +2,88 @@
 Author: Joon Sung Park (joonspk@stanford.edu)
 
 File: gpt_structure.py
-Description: Wrapper functions for calling OpenAI APIs.
+Description: Wrapper functions for calling OpenAI APIs, with optional Ollama backend.
 """
 import json
 import random
-from openai import OpenAI
-import requests
-import time 
+import openai
+import time
+import urllib.request
 
 from utils import *
 
-client = OpenAI(api_key=openai_api_key, base_url=openai_api_url)
+# ---------------------------------------------------------------------------
+# Backend selection
+# ---------------------------------------------------------------------------
+# Set LLM_BACKEND = "openai"  to use OpenAI (default).
+# Set LLM_BACKEND = "ollama"  to use Ollama (local or cloud).
+#
+# When using Ollama the client is still the openai-python library but pointed
+# at the Ollama base URL, which exposes an OpenAI-compatible /v1 endpoint.
+# ---------------------------------------------------------------------------
+
+_backend = globals().get("LLM_BACKEND", "openai").lower()
+
+if _backend == "ollama":
+  _ollama_base = globals().get("ollama_base_url", "https://ollama.com/")
+  _ollama_api_key = globals().get("ollama_api_key", "ollama")
+  _client = openai.OpenAI(
+    base_url=f"{_ollama_base.rstrip('/')}/v1",
+    api_key=_ollama_api_key,
+  )
+  # Model aliases: map the GPT model names used in this file to Ollama models.
+  _CHAT_MODEL   = globals().get("ollama_chat_model",      "llama3")
+  _GPT4_MODEL   = globals().get("ollama_gpt4_model",      "llama3")
+  _EMBED_MODEL  = globals().get("ollama_embedding_model", "nomic-embed-text")
+else:
+  _openai_key = globals().get("openai_api_key", "")
+  openai.api_key = _openai_key
+  _client = openai.OpenAI(api_key=_openai_key)
+  _CHAT_MODEL  = "gpt-3.5-turbo"
+  _GPT4_MODEL  = "gpt-4"
+  _EMBED_MODEL = "text-embedding-ada-002"
+
+
+def _chat_complete(model, messages):
+  """Thin wrapper: calls the configured backend's chat completion endpoint."""
+  completion = _client.chat.completions.create(model=model, messages=messages)
+  return completion.choices[0].message.content
+
 
 def temp_sleep(seconds=0.1):
   time.sleep(seconds)
 
-def ChatGPT_single_request(prompt): 
+def ChatGPT_single_request(prompt):
   temp_sleep()
-
-  completion = client.chat.completions.create(
-    model=openai_api_model, 
-    messages=[{"role": "user", "content": prompt}]
-  )
-  return completion.choices[0].message.content
+  return _chat_complete(_CHAT_MODEL, [{"role": "user", "content": prompt}])
 
 
 # ============================================================================
 # #####################[SECTION 1: CHATGPT-3 STRUCTURE] ######################
 # ============================================================================
 
-def GPT4_request(prompt): 
+def GPT4_request(prompt):
   """
-  Given a prompt and a dictionary of GPT parameters, make a request to OpenAI
-  server and returns the response. 
-  ARGS:
-    prompt: a str prompt
-    gpt_parameter: a python dictionary with the keys indicating the names of  
-                   the parameter and the values indicating the parameter 
-                   values.   
-  RETURNS: 
-    a str of GPT-3's response. 
+  Given a prompt, make a request to the configured LLM backend and return
+  the response string.
   """
   temp_sleep()
 
-  try: 
-    completion = client.chat.completions.create(
-    model=openai_api_model, 
-    messages=[{"role": "user", "content": prompt}]
-    )
-    return completion.choices[0].message.content
-  
-  except: 
+  try:
+    return _chat_complete(_GPT4_MODEL, [{"role": "user", "content": prompt}])
+  except:
     print ("ChatGPT ERROR")
     return "ChatGPT ERROR"
 
 
-def ChatGPT_request(prompt): 
+def ChatGPT_request(prompt):
   """
-  Given a prompt and a dictionary of GPT parameters, make a request to OpenAI
-  server and returns the response. 
-  ARGS:
-    prompt: a str prompt
-    gpt_parameter: a python dictionary with the keys indicating the names of  
-                   the parameter and the values indicating the parameter 
-                   values.   
-  RETURNS: 
-    a str of GPT-3's response. 
+  Given a prompt, make a request to the configured LLM backend and return
+  the response string.
   """
-  # temp_sleep()
-  try: 
-    completion = client.chat.completions.create(
-    model=openai_api_model, 
-    messages=[{"role": "user", "content": prompt}]
-    )
-    return completion.choices[0].message.content
-  
-  except: 
+  try:
+    return _chat_complete(_CHAT_MODEL, [{"role": "user", "content": prompt}])
+  except:
     print ("ChatGPT ERROR")
     return "ChatGPT ERROR"
 
@@ -159,13 +165,13 @@ def ChatGPT_safe_generate_response(prompt,
         print (curr_gpt_response)
         print ("~~~~")
 
-    except:
+    except: 
       pass
 
-  return fail_safe_response
+  return False
 
 
-def ChatGPT_safe_generate_response_OLD(prompt,
+def ChatGPT_safe_generate_response_OLD(prompt, 
                                    repeat=3,
                                    fail_safe_response="error",
                                    func_validate=None,
@@ -195,32 +201,32 @@ def ChatGPT_safe_generate_response_OLD(prompt,
 # ###################[SECTION 2: ORIGINAL GPT-3 STRUCTURE] ###################
 # ============================================================================
 
-def GPT_request(prompt, gpt_parameter): 
+def GPT_request(prompt, gpt_parameter):
   """
-  Given a prompt and a dictionary of GPT parameters, make a request to OpenAI
-  server and returns the response. 
-  ARGS:
-    prompt: a str prompt
-    gpt_parameter: a python dictionary with the keys indicating the names of  
-                   the parameter and the values indicating the parameter 
-                   values.   
-  RETURNS: 
-    a str of GPT-3's response. 
+  Given a prompt and a dictionary of GPT parameters, make a request to the
+  configured LLM backend and return the response string.
+
+  When using the Ollama backend the legacy text-completion API is unavailable,
+  so the prompt is forwarded as a chat message to the chat model instead.
   """
   temp_sleep()
-  try: 
-    response = client.completions.create(
-                model=gpt_parameter["engine"],
-                prompt=prompt,
-                temperature=gpt_parameter["temperature"],
-                max_tokens=gpt_parameter["max_tokens"],
-                top_p=gpt_parameter["top_p"],
-                frequency_penalty=gpt_parameter["frequency_penalty"],
-                presence_penalty=gpt_parameter["presence_penalty"],
-                stream=gpt_parameter["stream"],
-                stop=gpt_parameter["stop"],)
-    return response.choices[0].text
-  except: 
+  try:
+    if _backend == "ollama":
+      # Ollama has no legacy /v1/completions endpoint; use chat completions.
+      return _chat_complete(_CHAT_MODEL, [{"role": "user", "content": prompt}])
+    else:
+      response = _client.completions.create(
+                  model=gpt_parameter["engine"],
+                  prompt=prompt,
+                  temperature=gpt_parameter["temperature"],
+                  max_tokens=gpt_parameter["max_tokens"],
+                  top_p=gpt_parameter["top_p"],
+                  frequency_penalty=gpt_parameter["frequency_penalty"],
+                  presence_penalty=gpt_parameter["presence_penalty"],
+                  stream=gpt_parameter["stream"],
+                  stop=gpt_parameter["stop"])
+      return response.choices[0].text
+  except:
     print ("TOKEN LIMIT EXCEEDED")
     return "TOKEN LIMIT EXCEEDED"
 
@@ -274,18 +280,18 @@ def safe_generate_response(prompt,
   return fail_safe_response
 
 
-embedding_client = OpenAI(api_key=openai_api_embedding_key, base_url=openai_api_embedding_url)
-
-def get_embedding(text, model=openai_api_embedding_model):
-  text = text.replace("\n", " ") or "this is blank"
-  if not text: 
+def get_embedding(text, model=None):
+  text = text.replace("\n", " ")
+  if not text:
     text = "this is blank"
-  
-  return embedding_client.embeddings.create(input=[text], model=model).data[0].embedding
+  if model is None:
+    model = _EMBED_MODEL
+  response = _client.embeddings.create(input=[text], model=model)
+  return response.data[0].embedding
 
 
 if __name__ == '__main__':
-  gpt_parameter = {"engine": openai_api_model, "max_tokens": 50, 
+  gpt_parameter = {"engine": "text-davinci-003", "max_tokens": 50, 
                    "temperature": 0, "top_p": 1, "stream": False,
                    "frequency_penalty": 0, "presence_penalty": 0, 
                    "stop": ['"']}

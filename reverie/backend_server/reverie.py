@@ -398,7 +398,8 @@ class ReverieServer:
           #  "persona": {"Klaus Mueller": {"movement": [38, 12]}}, 
           #  "meta": {curr_time: <datetime>}}
           curr_move_file = f"{sim_folder}/movement/{self.step}.json"
-          with open(curr_move_file, "w") as outfile: 
+          os.makedirs(f"{sim_folder}/movement", exist_ok=True)
+          with open(curr_move_file, "w") as outfile:
             outfile.write(json.dumps(movements, indent=2))
 
           # After this cycle, the world takes one step forward, and the 

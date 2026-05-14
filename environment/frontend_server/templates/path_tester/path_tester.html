@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load staticfiles %}
+{% load static %}
 
 {% block content %}
 <br>
@@ -10,7 +10,11 @@
 
   
 <!-- partial -->
-<script src='https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/phaser@latest/dist/phaser.js'></script>
+<script
+  src="https://code.jquery.com/jquery-3.7.1.min.js"
+  integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+  crossorigin="anonymous"></script>
 {% include 'path_tester/main_script.html' %}
 {% endblock content %}
 

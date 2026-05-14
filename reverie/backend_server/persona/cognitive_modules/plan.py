@@ -562,8 +562,8 @@ def _determine_action(persona, maze):
   # * Decompose * 
   # During the first hour of the day, we need to decompose two hours 
   # sequence. We do that here. 
-  if curr_index == 0:
-    # This portion is invoked if it is the first hour of the day. 
+  if curr_index == 0 and len(persona.scratch.f_daily_schedule) > 0:
+    # This portion is invoked if it is the first hour of the day.
     act_desp, act_dura = persona.scratch.f_daily_schedule[curr_index]
     if act_dura >= 60: 
       # We decompose if the next action is longer than an hour, and fits the
@@ -592,30 +592,15 @@ def _determine_action(persona, maze):
                               generate_task_decomp(persona, act_desp, act_dura))
   # * End of Decompose * 
 
-  # Generate an <Action> instance from the action description and duration. By
-  # this point, we assume that all the relevant actions are decomposed and 
-  # ready in f_daily_schedule. 
-  print ("DEBUG LJSDLFSKJF")
-  for i in persona.scratch.f_daily_schedule: print (i)
-  print (curr_index)
-  print (len(persona.scratch.f_daily_schedule))
-  print (persona.scratch.name)
-  print ("------")
+  # Pad schedule to 1440 min so curr_index is always valid, then re-derive index.
+  x_emergency = sum(i[1] for i in persona.scratch.f_daily_schedule)
+  if 1440 - x_emergency > 0:
+    persona.scratch.f_daily_schedule += [["sleeping", 1440 - x_emergency]]
 
-  # 1440
-  x_emergency = 0
-  for i in persona.scratch.f_daily_schedule: 
-    x_emergency += i[1]
-  # print ("x_emergency", x_emergency)
+  curr_index = persona.scratch.get_f_daily_schedule_index()
+  curr_index = min(curr_index, len(persona.scratch.f_daily_schedule) - 1)
 
-  if 1440 - x_emergency > 0: 
-    print ("x_emergency__AAA", x_emergency)
-  persona.scratch.f_daily_schedule += [["sleeping", 1440 - x_emergency]]
-  
-
-
-
-  act_desp, act_dura = persona.scratch.f_daily_schedule[curr_index] 
+  act_desp, act_dura = persona.scratch.f_daily_schedule[curr_index]
 
 
 

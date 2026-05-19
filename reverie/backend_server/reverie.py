@@ -55,14 +55,23 @@ class ReverieServer:
     # reverie/meta/json's fork variable. 
     self.sim_code = sim_code
     sim_folder = f"{fs_storage}/{self.sim_code}"
-    copyanything(fork_folder, sim_folder)
 
-    with open(f"{sim_folder}/reverie/meta.json") as json_file:  
+    # If the target folder already exists, resume in-place instead of
+    # overwriting it with a fresh copy from the fork source.
+    resuming = os.path.exists(sim_folder)
+    if not resuming:
+      copyanything(fork_folder, sim_folder)
+
+    with open(f"{sim_folder}/reverie/meta.json") as json_file:
       reverie_meta = json.load(json_file)
 
-    with open(f"{sim_folder}/reverie/meta.json", "w") as outfile: 
-      reverie_meta["fork_sim_code"] = fork_sim_code
-      outfile.write(json.dumps(reverie_meta, indent=2))
+    if not resuming:
+      with open(f"{sim_folder}/reverie/meta.json", "w") as outfile:
+        reverie_meta["fork_sim_code"] = fork_sim_code
+        outfile.write(json.dumps(reverie_meta, indent=2))
+
+    if resuming:
+      print(f"Resuming existing simulation '{sim_code}' at step {reverie_meta['step']}.")
 
     # LOADING REVERIE'S GLOBAL VARIABLES
     # The start datetime of the Reverie: 
@@ -462,11 +471,20 @@ class ReverieServer:
           # Example: save
           self.save()
 
-        elif sim_command[:3].lower() == "run": 
+        elif sim_command[:3].lower() == "run":
           # Runs the number of steps specified in the prompt.
           # Example: run 1000
-          int_count = int(sim_command.split()[-1])
-          rs.start_server(int_count)
+          # To run until a specific step: run until 5000
+          parts = sim_command.split()
+          if len(parts) == 3 and parts[1].lower() == "until":
+            target_step = int(parts[2])
+            if target_step <= self.step:
+              print(f"Already at step {self.step}, target step {target_step} already reached.")
+            else:
+              rs.start_server(target_step - self.step)
+          else:
+            int_count = int(parts[-1])
+            rs.start_server(int_count)
 
         elif ("print persona schedule" 
               in sim_command[:22].lower()): 
@@ -600,14 +618,9 @@ class ReverieServer:
 
 
 if __name__ == '__main__':
-  # rs = ReverieServer("base_the_ville_isabella_maria_klaus", 
-  #                    "July1_the_ville_isabella_maria_klaus-step-3-1")
-  # rs = ReverieServer("July1_the_ville_isabella_maria_klaus-step-3-20", 
-  #                    "July1_the_ville_isabella_maria_klaus-step-3-21")
-  # rs.open_server()
-
   origin = input("Enter the name of the forked simulation: ").strip()
-  target = input("Enter the name of the new simulation: ").strip()
+  target_input = input("Enter the name of the new simulation (or press Enter to resume origin): ").strip()
+  target = target_input if target_input else origin
 
   rs = ReverieServer(origin, target)
   rs.open_server()

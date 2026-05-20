@@ -553,7 +553,9 @@ class Scratch:
         x = (x + datetime.timedelta(minutes=1))
       end_time = (x + datetime.timedelta(minutes=self.act_duration))
 
-    if end_time.strftime("%H:%M:%S") == self.curr_time.strftime("%H:%M:%S"): 
+    # Use >= so the action finishes even when curr_time jumps over the exact
+    # end moment (e.g. at 1 hr/step, a 5-min action would otherwise never match).
+    if self.curr_time >= end_time:
       return True
     return False
 

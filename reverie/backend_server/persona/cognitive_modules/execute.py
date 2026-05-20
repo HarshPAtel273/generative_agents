@@ -145,17 +145,20 @@ def execute(persona, maze, personas, plan):
     persona.scratch.planned_path = path[1:]
     persona.scratch.act_path_set = True
   
-  # Setting up the next immediate step. We stay at our curr_tile if there is
-  # no <planned_path> left, but otherwise, we go to the next tile in the path.
+  # Consume the entire planned_path in one step so the persona arrives at their
+  # destination within the same simulated time unit it was planned for.
+  # The full path is passed to the caller for smooth frontend animation —
+  # the frontend tween chain walks all waypoints regardless of how many there are.
   ret = persona.scratch.curr_tile
-  if persona.scratch.planned_path: 
-    ret = persona.scratch.planned_path[0]
-    persona.scratch.planned_path = persona.scratch.planned_path[1:]
+  full_path = list(persona.scratch.planned_path)
+  if persona.scratch.planned_path:
+    ret = persona.scratch.planned_path[-1]   # final tile = destination this step
+    persona.scratch.planned_path = []        # arrived — clear the path
 
   description = f"{persona.scratch.act_description}"
   description += f" @ {persona.scratch.act_address}"
 
-  execution = ret, persona.scratch.act_pronunciatio, description
+  execution = ret, persona.scratch.act_pronunciatio, description, full_path
   return execution
 
 

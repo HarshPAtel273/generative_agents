@@ -82,14 +82,15 @@
 
 	// <tile_width> is the width of one individual tile (tiles are square)
 	let tile_width = 32;
-	// Important: tile_width % movement_speed has to be 0. 
-	// <movement_speed> determines how fast we move at each upate cylce. 
-	let movement_speed = {{play_speed}}; 
+	// <ms_per_tile> — wall-clock milliseconds per tile hop in the tween.
+	// Lower = faster playback. play_speed controls overall speed via Django.
+	let ms_per_tile = Math.max(16, Math.round(200 / {{play_speed}}));
 
-	// Variables for storing movements that are sent from the backend server.
-	let execute_count_max = tile_width/movement_speed;
-	let execute_count = execute_count_max;
-	let movement_target = {};
+	// persona_name -> true while a tween chain is running for that persona
+	let persona_animating = {};
+	// Module-level so onComplete closures share the same counter across frames.
+	let tween_finished_count = 0;
+	let tween_total = 0;
 	let all_movement = {{ all_movement|safe }};
 
   let start_datetime =new Date(Date.parse("{{start_datetime}}"));
@@ -377,120 +378,126 @@
 
 
 
-	  // *** MOVING PERSONAS ***
-	 	for (let i=0; i<Object.keys(personas).length; i++) {
-	 		let curr_persona_name = Object.keys(personas)[i];
-    	let curr_persona = personas[curr_persona_name];
-    	let curr_pronunciatio = pronunciatios[Object.keys(personas)[i]];
-    	let curr_speech_bubble = speech_bubbles[Object.keys(personas)[i]];
+	  // *** MOVING PERSONAS (tween-chain, path-aware) ***
+	  // Labels and panels update immediately; sprites animate via tweens.
+	  // Step advances only after every persona's tween chain completes.
 
-    	if (curr_persona_name.replace("_", " ") in all_movement[step]) {
-    		if (execute_count == execute_count_max) { 
-    			let curr_x = all_movement[step][curr_persona_name.replace("_", " ")]["movement"][0]
-	        let curr_y = all_movement[step][curr_persona_name.replace("_", " ")]["movement"][1]
-    			movement_target[curr_persona_name] = [curr_x * tile_width, 
-	                                              curr_y * tile_width]; 
-	        let pronunciatio_content = all_movement[step][curr_persona_name.replace("_", " ")]["pronunciatio"];
-	        let description_content = all_movement[step][curr_persona_name.replace("_", " ")]["description"];
-	        let chat_content_raw = all_movement[step][curr_persona_name.replace("_", " ")]["chat"];
+	  // Update UI labels for all personas right away.
+	  for (let i = 0; i < Object.keys(personas).length; i++) {
+	    let curr_persona_name = Object.keys(personas)[i];
+	    let pname = curr_persona_name.replace("_", " ");
+	    if (!(pname in all_movement[step])) continue;
+	    let pdata = all_movement[step][pname];
 
-	        let chat_content = "";
-	        if (chat_content_raw != null ){
-		        for (let j=0; j<chat_content_raw.length; j++) { 
-		        	chat_content += chat_content_raw[j][0] + ": " + chat_content_raw[j][1] + "<br>"
-		        }
-		      } else {
-		      	chat_content = "<em>None at the moment</em>"
-		      }
+	    let pronunciatio_content = pdata["pronunciatio"];
+	    let rgx = new RegExp(/(\p{L}{1})\p{L}+/, 'gu');
+	    let initials = [...curr_persona_name.matchAll(rgx)] || [];
+	    initials = ((initials.shift()?.[1] || '') + (initials.pop()?.[1] || '')).toUpperCase();
+	    pronunciatios[curr_persona_name].setText(initials + ": " + pronunciatio_content);
+	    document.getElementById("quick_emoji-"+curr_persona_name).innerHTML = pronunciatio_content;
 
-	       	// This is what gives the pronunciatio balloon the name initials. We 
-	        // use regex to extract the initials of the personas. 
-	        // E.g., "Dolores Murphy" -> "DM"
-	        let rgx = new RegExp(/(\p{L}{1})\p{L}+/, 'gu');
-	        let initials = [...curr_persona_name.matchAll(rgx)] || [];
-	        initials = (
-	          (initials.shift()?.[1] || '') + (initials.pop()?.[1] || '')
-	        ).toUpperCase();
-	        pronunciatios[curr_persona_name].setText(initials + ": " + pronunciatio_content);
+	    let description_content = pdata["description"];
+	    let chat_content_raw = pdata["chat"];
+	    let chat_content = "";
+	    if (chat_content_raw != null) {
+	      for (let j = 0; j < chat_content_raw.length; j++)
+	        chat_content += chat_content_raw[j][0] + ": " + chat_content_raw[j][1] + "<br>";
+	    } else { chat_content = "<em>None at the moment</em>"; }
+	    document.getElementById("current_action__"+curr_persona_name).innerHTML = description_content.split("@")[0];
+	    document.getElementById("target_address__"+curr_persona_name).innerHTML = description_content.split("@")[1];
+	    document.getElementById("chat__"+curr_persona_name).innerHTML = chat_content;
+	  }
 
-	        // Updating the status of each personas 
-	        document.getElementById("quick_emoji-"+curr_persona_name).innerHTML = pronunciatio_content;
-	        document.getElementById("current_action__"+curr_persona_name).innerHTML = description_content.split("@")[0];
-	        document.getElementById("target_address__"+curr_persona_name).innerHTML = description_content.split("@")[1];
-	        document.getElementById("chat__"+curr_persona_name).innerHTML = chat_content;
-    		}
+	  // Launch tween chains only for personas not already animating.
+	  let personas_to_launch = Object.keys(personas).filter(n => !persona_animating[n]);
+	  if (personas_to_launch.length === 0) return;
 
-    		if (execute_count > 0) {
-    			if (curr_persona.body.x < movement_target[curr_persona_name][0]) {
-	          curr_persona.body.x += movement_speed; 
-	          anims_direction = "r";
-	          pre_anims_direction = "r"
-	          pre_anims_direction_dict[curr_persona_name] = "r"
-	        } else if (curr_persona.body.x > movement_target[curr_persona_name][0]) {
-	          curr_persona.body.x -= movement_speed; 
-	          anims_direction = "l";
-	          pre_anims_direction = "l"
-	          pre_anims_direction_dict[curr_persona_name] = "l"
-	        } else if (curr_persona.body.y < movement_target[curr_persona_name][1]) {
-	          curr_persona.body.y += movement_speed;
-	          anims_direction = "d";
-	          pre_anims_direction = "d"
-	          pre_anims_direction_dict[curr_persona_name] = "d"
-	        } else if (curr_persona.body.y > movement_target[curr_persona_name][1]) {
-	          curr_persona.body.y -= movement_speed;
-	          anims_direction = "u";
-	          pre_anims_direction = "u"
-	          pre_anims_direction_dict[curr_persona_name] = "u"
-	        } else {
-	        	anims_direction = "";
+	  tween_total = personas_to_launch.length;  // must match launched count, not all personas
+	  tween_finished_count = 0;
+	  let scene = this;
+
+	  personas_to_launch.forEach(curr_persona_name => {
+	    let curr_persona    = personas[curr_persona_name];
+	    let curr_pronunciatio = pronunciatios[curr_persona_name];
+	    let curr_speech_bubble = speech_bubbles[curr_persona_name];
+	    let pname = curr_persona_name.replace("_", " ");
+	    let pdata = all_movement[step][pname];
+
+	    // Use full path if present, fall back to single movement tile.
+	    let waypoints = (pdata && pdata["path"] && pdata["path"].length > 0)
+	      ? pdata["path"] : (pdata ? [pdata["movement"]] : [[curr_persona.x / tile_width, curr_persona.y / tile_width]]);
+
+	    persona_animating[curr_persona_name] = true;
+
+	    let left_walk  = curr_persona_name + "-left-walk";
+	    let right_walk = curr_persona_name + "-right-walk";
+	    let down_walk  = curr_persona_name + "-down-walk";
+	    let up_walk    = curr_persona_name + "-up-walk";
+
+	    let tween_configs = waypoints.map(([tx, ty]) => {
+	      let target_x = tx * tile_width;
+	      let target_y = ty * tile_width;
+	      return {
+	        targets: curr_persona,
+	        x: target_x,
+	        y: target_y,
+	        duration: ms_per_tile,
+	        ease: 'Linear',
+	        onUpdate: () => {
+	          let dx = target_x - curr_persona.x;
+	          let dy = target_y - curr_persona.y;
+	          let dir = "";
+	          if (Math.abs(dx) > Math.abs(dy)) { dir = dx > 0 ? "r" : "l"; }
+	          else if (dy !== 0)               { dir = dy > 0 ? "d" : "u"; }
+	          if (dir === "l") curr_persona.anims.play(left_walk,  true);
+	          else if (dir === "r") curr_persona.anims.play(right_walk, true);
+	          else if (dir === "u") curr_persona.anims.play(up_walk,   true);
+	          else if (dir === "d") curr_persona.anims.play(down_walk,  true);
+	          if (dir) pre_anims_direction_dict[curr_persona_name] = dir;
+
+	          curr_pronunciatio.x   = curr_persona.x + 18;
+	          curr_pronunciatio.y   = curr_persona.y - 42 - 25;
+	          curr_speech_bubble.x  = curr_persona.x + 80;
+	          curr_speech_bubble.y  = curr_persona.y - 39;
 	        }
+	      };
+	    });
 
-	        curr_pronunciatio.x = curr_persona.body.x + 18; 
-          curr_pronunciatio.y = curr_persona.body.y - 42 - 25; // DEBUG 1 --- I added 32 offset on Dec 29. 
-          curr_speech_bubble.x = curr_persona.body.x + 80; 
-          curr_speech_bubble.y = curr_persona.body.y - 39;
+	    scene.tweens.chain({
+	      tweens: tween_configs,
+	      onComplete: () => {
+	        // Snap to exact pixel, set idle frame.
+	        let final_wp = waypoints[waypoints.length - 1];
+	        curr_persona.setPosition(final_wp[0] * tile_width, final_wp[1] * tile_width);
+	        curr_pronunciatio.x  = curr_persona.x + 18;
+	        curr_pronunciatio.y  = curr_persona.y - 42 - 25;
+	        curr_speech_bubble.x = curr_persona.x + 80;
+	        curr_speech_bubble.y = curr_persona.y - 39;
 
-          let left_walk_name = curr_persona_name + "-left-walk";
-					let right_walk_name = curr_persona_name + "-right-walk";
-					let down_walk_name = curr_persona_name + "-down-walk";
-					let up_walk_name = curr_persona_name + "-up-walk";
-          if (anims_direction == "l") {
-			      curr_persona.anims.play(left_walk_name, true);
-			    } else if (anims_direction == "r") {
-			      curr_persona.anims.play(right_walk_name, true);
-			    } else if (anims_direction == "u") {
-			      curr_persona.anims.play(up_walk_name, true);
-			    } else if (anims_direction == "d") {
-			      curr_persona.anims.play(down_walk_name, true);
-			    };
-    		}
-    	} else { 
-    		curr_persona.anims.stop();
-	      // If we were moving, pick an idle frame to use
-	      if (pre_anims_direction_dict[curr_persona_name] == "l") curr_persona.setTexture(curr_persona_name, "left"); else
-	      if (pre_anims_direction_dict[curr_persona_name] == "r") curr_persona.setTexture(curr_persona_name, "right"); else
-	      if (pre_anims_direction_dict[curr_persona_name] == "u") curr_persona.setTexture(curr_persona_name, "up"); else
-	      if (pre_anims_direction_dict[curr_persona_name] == "d") curr_persona.setTexture(curr_persona_name, "down");
-    	}
-	 	}
+	        curr_persona.anims.stop();
+	        let d = pre_anims_direction_dict[curr_persona_name];
+	        if (d === "l") curr_persona.setTexture(curr_persona_name, "left");
+	        else if (d === "r") curr_persona.setTexture(curr_persona_name, "right");
+	        else if (d === "u") curr_persona.setTexture(curr_persona_name, "up");
+	        else if (d === "d") curr_persona.setTexture(curr_persona_name, "down");
 
-	  if (execute_count == 0) {
-		  for (let i=0; i<Object.keys(personas).length; i++) {
-	      let curr_persona_name = Object.keys(personas)[i]
-	      let curr_persona = personas[curr_persona_name];
-	      curr_persona.body.x = movement_target[curr_persona_name][0];
-	      curr_persona.body.y = movement_target[curr_persona_name][1];
-	    }
-			execute_count = execute_count_max + 1;
-	    step = step + 1;
-
-	    start_datetime = new Date(start_datetime.getTime() + step_size);
- 			document.getElementById("game-time-content").innerHTML = start_datetime.toLocaleTimeString("en-US", datetime_options);
-    }
-
-	  execute_count -= 1;
+	        persona_animating[curr_persona_name] = false;
+	        tween_finished_count++;
+	        if (tween_finished_count === tween_total) {
+	          // All personas reached their destination — advance the step.
+	          step = step + 1;
+	          if (!(step in all_movement)) {
+	            scene.scene.pause();
+	            return;
+	          }
+	          start_datetime = new Date(start_datetime.getTime() + step_size);
+	          document.getElementById("game-time-content").innerHTML =
+	            start_datetime.toLocaleTimeString("en-US", datetime_options);
+	        }
+	      }
+	    });
+	  });
 	}
-
 	// Control button binders
 	var play_button=document.getElementById("play_button");
 	var pause_button=document.getElementById("pause_button");

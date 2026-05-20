@@ -385,11 +385,14 @@ class ReverieServer:
             # <description> is a string description of the movement. e.g., 
             #   writing her next novel (editing her novel) 
             #   @ double studio:double studio:common room:sofa
-            next_tile, pronunciatio, description = persona.move(
-              self.maze, self.personas, self.personas_tile[persona_name], 
+            next_tile, pronunciatio, description, path = persona.move(
+              self.maze, self.personas, self.personas_tile[persona_name],
               self.curr_time)
             movements["persona"][persona_name] = {}
             movements["persona"][persona_name]["movement"] = next_tile
+            # Full ordered waypoint list for smooth frontend animation.
+            # Includes next_tile as first element; empty list means no movement.
+            movements["persona"][persona_name]["path"] = [list(t) for t in path]
             movements["persona"][persona_name]["pronunciatio"] = pronunciatio
             movements["persona"][persona_name]["description"] = description
             movements["persona"][persona_name]["chat"] = (persona

@@ -423,9 +423,21 @@
 	    let pname = curr_persona_name.replace("_", " ");
 	    let pdata = all_movement[step][pname];
 
+
 	    // Use full path if present, fall back to single movement tile.
 	    let waypoints = (pdata && pdata["path"] && pdata["path"].length > 0)
 	      ? pdata["path"] : (pdata ? [pdata["movement"]] : [[curr_persona.x / tile_width, curr_persona.y / tile_width]]);
+
+	    // Option 3: snap to path[0] (honest step-start position) to eliminate
+	    // the cross-step teleport artifact, then tween the rest of the path.
+	    curr_persona.setPosition(waypoints[0][0] * tile_width, waypoints[0][1] * tile_width);
+	    curr_pronunciatio.x  = curr_persona.x + 18;
+	    curr_pronunciatio.y  = curr_persona.y - 42 - 25;
+	    curr_speech_bubble.x = curr_persona.x + 80;
+	    curr_speech_bubble.y = curr_persona.y - 39;
+
+	    // Tween remaining waypoints — skip [0], already snapped there.
+	    let tween_waypoints = waypoints.length > 1 ? waypoints.slice(1) : waypoints;
 
 	    persona_animating[curr_persona_name] = true;
 
@@ -434,7 +446,7 @@
 	    let down_walk  = curr_persona_name + "-down-walk";
 	    let up_walk    = curr_persona_name + "-up-walk";
 
-	    let tween_configs = waypoints.map(([tx, ty]) => {
+	    let tween_configs = tween_waypoints.map(([tx, ty]) => {
 	      let target_x = tx * tile_width;
 	      let target_y = ty * tile_width;
 	      return {

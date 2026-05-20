@@ -106,24 +106,30 @@ def home(request):
   f_curr_sim_code = "temp_storage/curr_sim_code.json"
   f_curr_step = "temp_storage/curr_step.json"
 
-  if not check_if_file_exists(f_curr_step): 
+  if not check_if_file_exists(f_curr_step):
     context = {}
     template = "home/error_start_backend.html"
     return render(request, template, context)
 
-  with open(f_curr_sim_code) as json_file:  
+  with open(f_curr_sim_code) as json_file:
     sim_code = json.load(json_file)["sim_code"]
-  
-  with open(f_curr_step) as json_file:  
+
+  with open(f_curr_step) as json_file:
     step = json.load(json_file)["step"]
 
   os.remove(f_curr_step)
 
+  meta_file = f"storage/{sim_code}/reverie/meta.json"
+  sec_per_step = 10
+  if check_if_file_exists(meta_file):
+    with open(meta_file) as json_file:
+      sec_per_step = json.load(json_file).get("sec_per_step", 10)
+
   persona_names = []
   persona_names_set = set()
-  for i in find_filenames(f"storage/{sim_code}/personas", ""): 
+  for i in find_filenames(f"storage/{sim_code}/personas", ""):
     x = i.split("/")[-1].strip()
-    if x[0] != ".": 
+    if x[0] != ".":
       persona_names += [[x, x.replace(" ", "_")]]
       persona_names_set.add(x)
 
@@ -131,53 +137,61 @@ def home(request):
   file_count = []
   for i in find_filenames(f"storage/{sim_code}/environment", ".json"):
     x = i.split("/")[-1].strip()
-    if x[0] != ".": 
+    if x[0] != ".":
       file_count += [int(x.split(".")[0])]
   curr_json = f'storage/{sim_code}/environment/{str(max(file_count))}.json'
-  with open(curr_json) as json_file:  
+  with open(curr_json) as json_file:
     persona_init_pos_dict = json.load(json_file)
-    for key, val in persona_init_pos_dict.items(): 
-      if key in persona_names_set: 
-        persona_init_pos += [[key, val["x"], val["y"]]]
-
-  context = {"sim_code": sim_code,
-             "step": step, 
-             "persona_names": persona_names,
-             "persona_init_pos": persona_init_pos,
-             "mode": "simulate"}
-  template = "home/home.html"
-  return render(request, template, context)
-
-
-def replay(request, sim_code, step): 
-  sim_code = sim_code
-  step = int(step)
-
-  persona_names = []
-  persona_names_set = set()
-  for i in find_filenames(f"storage/{sim_code}/personas", ""): 
-    x = i.split("/")[-1].strip()
-    if x[0] != ".": 
-      persona_names += [[x, x.replace(" ", "_")]]
-      persona_names_set.add(x)
-
-  persona_init_pos = []
-  file_count = []
-  for i in find_filenames(f"storage/{sim_code}/environment", ".json"):
-    x = i.split("/")[-1].strip()
-    if x[0] != ".": 
-      file_count += [int(x.split(".")[0])]
-  curr_json = f'storage/{sim_code}/environment/{str(max(file_count))}.json'
-  with open(curr_json) as json_file:  
-    persona_init_pos_dict = json.load(json_file)
-    for key, val in persona_init_pos_dict.items(): 
-      if key in persona_names_set: 
+    for key, val in persona_init_pos_dict.items():
+      if key in persona_names_set:
         persona_init_pos += [[key, val["x"], val["y"]]]
 
   context = {"sim_code": sim_code,
              "step": step,
              "persona_names": persona_names,
-             "persona_init_pos": persona_init_pos, 
+             "persona_init_pos": persona_init_pos,
+             "sec_per_step": sec_per_step,
+             "mode": "simulate"}
+  template = "home/home.html"
+  return render(request, template, context)
+
+
+def replay(request, sim_code, step):
+  sim_code = sim_code
+  step = int(step)
+
+  meta_file = f"storage/{sim_code}/reverie/meta.json"
+  sec_per_step = 10
+  if check_if_file_exists(meta_file):
+    with open(meta_file) as json_file:
+      sec_per_step = json.load(json_file).get("sec_per_step", 10)
+
+  persona_names = []
+  persona_names_set = set()
+  for i in find_filenames(f"storage/{sim_code}/personas", ""):
+    x = i.split("/")[-1].strip()
+    if x[0] != ".":
+      persona_names += [[x, x.replace(" ", "_")]]
+      persona_names_set.add(x)
+
+  persona_init_pos = []
+  file_count = []
+  for i in find_filenames(f"storage/{sim_code}/environment", ".json"):
+    x = i.split("/")[-1].strip()
+    if x[0] != ".":
+      file_count += [int(x.split(".")[0])]
+  curr_json = f'storage/{sim_code}/environment/{str(max(file_count))}.json'
+  with open(curr_json) as json_file:
+    persona_init_pos_dict = json.load(json_file)
+    for key, val in persona_init_pos_dict.items():
+      if key in persona_names_set:
+        persona_init_pos += [[key, val["x"], val["y"]]]
+
+  context = {"sim_code": sim_code,
+             "step": step,
+             "persona_names": persona_names,
+             "persona_init_pos": persona_init_pos,
+             "sec_per_step": sec_per_step,
              "mode": "replay"}
   template = "home/home.html"
   return render(request, template, context)

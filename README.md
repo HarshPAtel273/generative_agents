@@ -15,7 +15,7 @@ Compared to the original paper implementation, this version adds:
 
 - **Local LLM backend** — configurable via `openai_api_model` to use Ollama, vLLM, or any OpenAI-compatible server instead of the OpenAI API
 - **One-hour-per-step simulation** — parallelized agent processing and animation fixes for running at 1 simulated hour per step
-- **Simulation stability** — resume-in-place support, arena validation, and a `run-until` command for unattended runs
+- **Simulation stability** — resume-in-place support, arena validation, and a `run until` command for unattended runs
 - **Optimized throughput** — removed blocking `time.sleep()` calls when using local inference servers
 
 ## System Architecture

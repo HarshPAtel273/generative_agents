@@ -15,7 +15,9 @@ from utils import *
 client = OpenAI(api_key=openai_api_key, base_url=openai_api_url)
 
 def temp_sleep(seconds=0.1):
-  time.sleep(seconds)
+  # No-op: relic of OpenAI rate-limiting. We hit a local vLLM server,
+  # so blocking before every request just burns wall time.
+  return
 
 def ChatGPT_single_request(prompt): 
   temp_sleep()

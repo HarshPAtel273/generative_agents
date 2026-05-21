@@ -27,6 +27,7 @@ import math
 import os
 import shutil
 import traceback
+from concurrent.futures import ThreadPoolExecutor
 
 from selenium import webdriver
 
@@ -376,22 +377,26 @@ class ReverieServer:
           # Then we need to actually have each of the personas perceive and
           # move. The movement for each of the personas comes in the form of
           # x y coordinates where the persona will move towards. e.g., (50, 34)
-          # This is where the core brains of the personas are invoked. 
-          movements = {"persona": dict(), 
+          # This is where the core brains of the personas are invoked.
+          # Run personas in parallel: each persona.move() is dominated by LLM
+          # HTTP latency, so threads are an effective concurrency primitive.
+          movements = {"persona": dict(),
                        "meta": dict()}
-          for persona_name, persona in self.personas.items(): 
-            # <next_tile> is a x,y coordinate. e.g., (58, 9)
-            # <pronunciatio> is an emoji. e.g., "\ud83d\udca4"
-            # <description> is a string description of the movement. e.g., 
-            #   writing her next novel (editing her novel) 
-            #   @ double studio:double studio:common room:sofa
+
+          def _run_persona_move(item):
+            persona_name, persona = item
             next_tile, pronunciatio, description, path = persona.move(
               self.maze, self.personas, self.personas_tile[persona_name],
               self.curr_time)
+            return persona_name, persona, next_tile, pronunciatio, description, path
+
+          with ThreadPoolExecutor(max_workers=len(self.personas)) as executor:
+            results = list(executor.map(_run_persona_move,
+                                        self.personas.items()))
+
+          for persona_name, persona, next_tile, pronunciatio, description, path in results:
             movements["persona"][persona_name] = {}
             movements["persona"][persona_name]["movement"] = next_tile
-            # Full ordered waypoint list for smooth frontend animation.
-            # Includes next_tile as first element; empty list means no movement.
             movements["persona"][persona_name]["path"] = [list(t) for t in path]
             movements["persona"][persona_name]["pronunciatio"] = pronunciatio
             movements["persona"][persona_name]["description"] = description

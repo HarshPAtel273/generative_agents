@@ -51,7 +51,9 @@ def _chat_complete(model, messages):
 
 
 def temp_sleep(seconds=0.1):
-  time.sleep(seconds)
+  # No-op: relic of OpenAI rate-limiting. We hit a local vLLM server,
+  # so blocking before every request just burns wall time.
+  return
 
 def ChatGPT_single_request(prompt):
   temp_sleep()

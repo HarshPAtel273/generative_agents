@@ -6,7 +6,7 @@ Description: This defines the "Plan" module for generative agents.
 """
 import datetime
 import math
-import random 
+import random
 import sys
 import time
 sys.path.append('../../')
@@ -19,6 +19,48 @@ from persona.cognitive_modules.converse import *
 ##############################################################################
 # CHAPTER 2: Generate
 ##############################################################################
+
+# In-memory, per-process caches for LLM generations that are pure functions of
+# their inputs and do NOT feed into agents' social decisions. These are safe to
+# cache for a comparative study: only the emoji (cosmetic) and the object-state
+# description are cached. Spatial resolution (sector/arena/game_object) and the
+# perceivable event triple are deliberately NOT cached -- they may be channels
+# through which an intervention affects outcomes. Caches are never persisted to
+# disk, so each simulation run starts empty and the two arms stay independent.
+_pronunciatio_cache = dict()
+_act_obj_desc_cache = dict()
+
+# Personas now run their move()/plan() in parallel threads (see reverie.py).
+# Most of plan() touches only the persona's own state and is safe to run
+# concurrently. The dangerous part is schedule mutation:
+#   - _determine_action mutates the persona's OWN f_daily_schedule.
+#   - _chat_react mutates BOTH the initiating AND the target persona's scratch.
+# Two threads writing the same persona's schedule corrupts it -- the IndexError
+# seen in generate_new_decomp_schedule. Each Persona carries its own
+# <plan_lock>; a thread holds a persona's lock while mutating that persona's
+# schedule. The expensive LLM work outside these critical sections stays
+# parallel.
+#
+# <contextlib.ExitStack> lets _chat_react acquire two persona locks at once.
+import contextlib
+
+
+def _lock_personas(*personas):
+  """
+  Context manager that acquires the plan_lock of each given persona, always in
+  a fixed global order (sorted by name) so two threads locking the same pair
+  can never deadlock. Duplicate personas are de-duplicated.
+  """
+  stack = contextlib.ExitStack()
+  seen = set()
+  ordered = []
+  for p in sorted(personas, key=lambda p: p.name):
+    if p.name not in seen:
+      seen.add(p.name)
+      ordered.append(p)
+  for p in ordered:
+    stack.enter_context(p.plan_lock)
+  return stack
 
 def generate_wake_up_hour(persona):
   """
@@ -239,13 +281,20 @@ def generate_action_pronunciatio(act_desp, persona):
     "🧈🍞"
   """
   if debug: print ("GNS FUNCTION: <generate_action_pronunciatio>")
-  try: 
+
+  # Cosmetic-only (frontend emoji); pure function of act_desp. Cache by act_desp.
+  if act_desp in _pronunciatio_cache:
+    return _pronunciatio_cache[act_desp]
+
+  try:
     x = run_gpt_prompt_pronunciatio(act_desp, persona)[0]
-  except: 
+  except:
     x = "🙂"
 
-  if not x: 
-    return "🙂"
+  if not x:
+    x = "🙂"
+
+  _pronunciatio_cache[act_desp] = x
   return x
 
 
@@ -264,9 +313,19 @@ def generate_action_event_triple(act_desp, persona):
   return run_gpt_prompt_event_triple(act_desp, persona)[0]
 
 
-def generate_act_obj_desc(act_game_object, act_desp, persona): 
+def generate_act_obj_desc(act_game_object, act_desp, persona):
   if debug: print ("GNS FUNCTION: <generate_act_obj_desc>")
-  return run_gpt_prompt_act_obj_desc(act_game_object, act_desp, persona)[0]
+
+  # The object's state description, a function of (game_object, act_desp). The
+  # same action on the same object genuinely yields the same object state, so
+  # caching here is consistent and does not bias social dynamics.
+  cache_key = (act_game_object, act_desp)
+  if cache_key in _act_obj_desc_cache:
+    return _act_obj_desc_cache[cache_key]
+
+  result = run_gpt_prompt_act_obj_desc(act_game_object, act_desp, persona)[0]
+  _act_obj_desc_cache[cache_key] = result
+  return result
 
 
 def generate_act_obj_event_triple(act_game_object, act_obj_desc, persona): 
@@ -935,13 +994,21 @@ def plan(persona, maze, personas, new_day, retrieved):
   OUTPUT 
     The target action address of the persona (persona.scratch.act_address).
   """ 
-  # PART 1: Generate the hourly schedule. 
-  if new_day: 
-    _long_term_planning(persona, new_day)
+  # PART 1: Generate the hourly schedule. Holds this persona's own lock for the
+  # same reason as PART 2 -- it rebuilds f_daily_schedule, which a concurrent
+  # chat-react on another thread may also be writing.
+  if new_day:
+    with persona.plan_lock:
+      _long_term_planning(persona, new_day)
 
   # PART 2: If the current action has expired, we want to create a new plan.
-  if persona.scratch.act_check_finished(): 
-    _determine_action(persona, maze)
+  # Hold this persona's own lock: _determine_action mutates its f_daily_schedule
+  # and another thread's _chat_react may target this same persona. Two
+  # *different* personas still re-plan concurrently (each holds only its own
+  # lock), so the parallel speedup is preserved.
+  if persona.scratch.act_check_finished():
+    with persona.plan_lock:
+      _determine_action(persona, maze)
 
   # PART 3: If you perceived an event that needs to be responded to (saw 
   # another persona), and retrieved relevant information. 
@@ -962,14 +1029,21 @@ def plan(persona, maze, personas, new_day, retrieved):
   #         a) "chat with {target_persona.name}"
   #         b) "react"
   #         c) False
-  if focused_event: 
+  if focused_event:
     reaction_mode = _should_react(persona, focused_event, personas)
-    if reaction_mode: 
-      # If we do want to chat, then we generate conversation 
+    if reaction_mode:
+      # If we do want to chat, then we generate conversation
       if reaction_mode[:9] == "chat with":
-        _chat_react(maze, persona, focused_event, reaction_mode, personas)
-      elif reaction_mode[:4] == "wait": 
-        _wait_react(persona, reaction_mode)
+        # _chat_react mutates BOTH this persona's and the target's schedule.
+        # Lock both (ordered by name -> deadlock-free) so neither can be
+        # concurrently re-planned by its own thread or another chat-react.
+        target_persona = personas[reaction_mode[9:].strip()]
+        with _lock_personas(persona, target_persona):
+          _chat_react(maze, persona, focused_event, reaction_mode, personas)
+      elif reaction_mode[:4] == "wait":
+        # _wait_react only mutates this persona's own schedule.
+        with persona.plan_lock:
+          _wait_react(persona, reaction_mode)
       # elif reaction_mode == "do other things": 
       #   _chat_react(persona, focused_event, reaction_mode, personas)
 

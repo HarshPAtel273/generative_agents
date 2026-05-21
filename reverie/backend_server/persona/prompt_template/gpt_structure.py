@@ -278,12 +278,25 @@ def safe_generate_response(prompt,
 
 embedding_client = OpenAI(api_key=openai_api_embedding_key, base_url=openai_api_embedding_url)
 
+# In-memory, per-process cache. Embeddings are deterministic for a given model,
+# so a cache hit returns the exact same vector the API would. The cache lives
+# only for the lifetime of the process and is NOT persisted to disk -- this
+# keeps comparative simulation runs (e.g. dynasty vs anti-dynasty) independent:
+# each run starts with an empty cache.
+_embedding_cache = dict()
+
 def get_embedding(text, model=openai_api_embedding_model):
   text = text.replace("\n", " ") or "this is blank"
-  if not text: 
+  if not text:
     text = "this is blank"
-  
-  return embedding_client.embeddings.create(input=[text], model=model).data[0].embedding
+
+  cache_key = (model, text)
+  if cache_key in _embedding_cache:
+    return _embedding_cache[cache_key]
+
+  result = embedding_client.embeddings.create(input=[text], model=model).data[0].embedding
+  _embedding_cache[cache_key] = result
+  return result
 
 
 if __name__ == '__main__':

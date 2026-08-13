@@ -1,0 +1,188 @@
+{
+  "vision_r": 8,
+  "att_bandwidth": 8,
+  "retention": 8,
+  "curr_time": "February 13, 2026, 08:00:10",
+  "curr_tile": [
+    121,
+    45
+  ],
+  "daily_plan_req": "Klaus Mueller goes to the library at Oak Hill College early in the morning, spends his days writing, and eats at Hobbs Cafe.",
+  "name": "Klaus Mueller",
+  "first_name": "Klaus",
+  "last_name": "Mueller",
+  "age": 20,
+  "innate": "kind, inquisitive, passionate",
+  "learned": "Klaus Mueller is a student at Oak Hill College studying sociology. He is passionate about social justice and loves to explore different perspectives.",
+  "currently": "Klaus Mueller is writing a research paper on the effects of gentrification in low-income communities.",
+  "lifestyle": "Klaus Mueller goes to bed around 11pm, awakes up around 7am, eats dinner around 5pm.",
+  "living_area": "the Ville:Dorm for Oak Hill College:Klaus Mueller's room",
+  "concept_forget": 100,
+  "daily_reflection_time": 180,
+  "daily_reflection_size": 5,
+  "overlap_reflect_th": 4,
+  "kw_strg_event_reflect_th": 10,
+  "kw_strg_thought_reflect_th": 9,
+  "recency_w": 1,
+  "relevance_w": 1,
+  "importance_w": 1,
+  "recency_decay": 0.99,
+  "importance_trigger_max": 150,
+  "importance_trigger_curr": 123,
+  "importance_ele_n": 12,
+  "thought_count": 5,
+  "daily_req": [
+    "wake up and complete the morning routine at 7:00 am"
+  ],
+  "f_daily_schedule": [
+    [
+      "sleeping",
+      420
+    ],
+    [
+      "I'll continue with the hourly schedule for Klaus Mueller on Friday, February 13. Here's the completed breakdown:",
+      120
+    ],
+    [
+      "Here is the completed hourly schedule for Klaus Mueller on Friday, February 13: (brainstorming ideas for the lesson)",
+      30
+    ],
+    [
+      "Here is the completed hourly schedule for Klaus Mueller on Friday, February 13: (creating the lesson plan)",
+      30
+    ],
+    [
+      "Here is the completed hourly schedule for Klaus Mueller on Friday, February 13: (creating materials for the lesson)",
+      30
+    ],
+    [
+      "Here is the completed hourly schedule for Klaus Mueller on Friday, February 13: (taking a break)",
+      15
+    ],
+    [
+      "Here is the completed hourly schedule for Klaus Mueller on Friday, February 13: (reviewing the lesson plan)",
+      30
+    ],
+    [
+      "Here is the completed hourly schedule for Klaus Mueller on Friday, February 13: (making final changes to the lesson plan)",
+      15
+    ],
+    [
+      "Here is the completed hourly schedule for Klaus Mueller on Friday, February 13: (printing the lesson plan)",
+      10
+    ],
+    [
+      "Here is the completed hourly schedule for Klaus Mueller on Friday, February 13: (putting the lesson plan in her bag)",
+      20
+    ],
+    [
+      "Based on the provided information, here is the completed hourly schedule for Klaus Mueller on Friday, February 13:",
+      60
+    ],
+    [
+      "Here is the completed hourly schedule for Klaus Mueller on Friday, February 13:",
+      60
+    ],
+    [
+      "Let's fill in Klaus Mueller's hourly schedule for Friday, February 13. Here it is:",
+      60
+    ],
+    [
+      "Let's fill in the rest of Klaus Mueller's hourly schedule for Friday, February 13",
+      120
+    ],
+    [
+      "Here is the completed hourly schedule for Klaus Mueller on Friday, February 13:",
+      120
+    ],
+    [
+      "Based on the provided information, here is the completed hourly schedule for Klaus Mueller on Friday, February 13:",
+      60
+    ],
+    [
+      "Here is the completed hourly schedule for Klaus Mueller on Friday, February 13:",
+      60
+    ],
+    [
+      "It looks like we have a partial hourly schedule for Klaus Mueller on Friday, February 13. Let's fill in the rest of his schedule based on his daily plan and lifestyle",
+      60
+    ],
+    [
+      "Based on the provided information, here is the completed hourly schedule for Klaus Mueller on Friday, February 13:",
+      120
+    ]
+  ],
+  "f_daily_schedule_hourly_org": [
+    [
+      "sleeping",
+      420
+    ],
+    [
+      "I'll continue with the hourly schedule for Klaus Mueller on Friday, February 13. Here's the completed breakdown:",
+      120
+    ],
+    [
+      "Here is the completed hourly schedule for Klaus Mueller on Friday, February 13:",
+      180
+    ],
+    [
+      "Based on the provided information, here is the completed hourly schedule for Klaus Mueller on Friday, February 13:",
+      60
+    ],
+    [
+      "Here is the completed hourly schedule for Klaus Mueller on Friday, February 13:",
+      60
+    ],
+    [
+      "Let's fill in Klaus Mueller's hourly schedule for Friday, February 13. Here it is:",
+      60
+    ],
+    [
+      "Let's fill in the rest of Klaus Mueller's hourly schedule for Friday, February 13",
+      120
+    ],
+    [
+      "Here is the completed hourly schedule for Klaus Mueller on Friday, February 13:",
+      120
+    ],
+    [
+      "Based on the provided information, here is the completed hourly schedule for Klaus Mueller on Friday, February 13:",
+      60
+    ],
+    [
+      "Here is the completed hourly schedule for Klaus Mueller on Friday, February 13:",
+      60
+    ],
+    [
+      "It looks like we have a partial hourly schedule for Klaus Mueller on Friday, February 13. Let's fill in the rest of his schedule based on his daily plan and lifestyle",
+      60
+    ],
+    [
+      "Based on the provided information, here is the completed hourly schedule for Klaus Mueller on Friday, February 13:",
+      120
+    ]
+  ],
+  "act_address": "the Ville:Dorm for Oak Hill College:kitchen:kitchen sink",
+  "act_start_time": "February 13, 2026, 08:00:00",
+  "act_duration": 120,
+  "act_description": "I'll continue with the hourly schedule for Klaus Mueller on Friday, February 13. Here's the completed breakdown:",
+  "act_pronunciatio": "\ud83d\udd52\ud83d\udcbc",
+  "act_event": [
+    "Klaus Mueller",
+    "It seems like you want me to extract the subject and object from a sentence in the format \"Name is Verb Object\". However",
+    "upon reviewing your examples"
+  ],
+  "act_obj_description": "being used",
+  "act_obj_pronunciatio": "\ud83d\udcbc\ud83d\ude0c",
+  "act_obj_event": [
+    "kitchen sink",
+    "It seems like the task is to extract the subject and predicate from each sentence",
+    "but with some variations in how the object is represented."
+  ],
+  "chatting_with": null,
+  "chat": null,
+  "chatting_with_buffer": {},
+  "chatting_end_time": null,
+  "act_path_set": true,
+  "planned_path": []
+}

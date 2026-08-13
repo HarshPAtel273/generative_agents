@@ -1,0 +1,46 @@
+{
+  "persona": {
+    "Isabella Rodriguez": {
+      "movement": [
+        76,
+        14
+      ],
+      "path": [],
+      "pronunciatio": "\ud83d\udf6b\ud83e\udd17",
+      "description": "Here is the completed hourly breakdown for Isabella Rodriguez's schedule on February 13th: (reviewing the kindergarten curriculum standards) @ the Ville:Isabella Rodriguez's apartment:main room:closet",
+      "chat": null
+    },
+    "Maria Lopez": {
+      "movement": [
+        123,
+        46
+      ],
+      "path": [
+        [
+          123,
+          45
+        ],
+        [
+          123,
+          46
+        ]
+      ],
+      "pronunciatio": "\ud83d\ude34",
+      "description": "sleeping @ the Ville:Dorm for Oak Hill College:kitchen:<random>",
+      "chat": null
+    },
+    "Klaus Mueller": {
+      "movement": [
+        121,
+        45
+      ],
+      "path": [],
+      "pronunciatio": "\ud83d\udd52\ud83d\udcbc",
+      "description": "I'll continue with the hourly schedule for Klaus Mueller on Friday, February 13. Here's the completed breakdown: @ the Ville:Dorm for Oak Hill College:kitchen:kitchen sink",
+      "chat": null
+    }
+  },
+  "meta": {
+    "curr_time": "February 13, 2026, 08:00:10"
+  }
+}

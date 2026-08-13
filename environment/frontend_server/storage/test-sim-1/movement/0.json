@@ -1,0 +1,212 @@
+{
+  "persona": {
+    "Isabella Rodriguez": {
+      "movement": [
+        76,
+        14
+      ],
+      "path": [
+        [
+          73,
+          14
+        ],
+        [
+          74,
+          14
+        ],
+        [
+          75,
+          14
+        ],
+        [
+          76,
+          14
+        ]
+      ],
+      "pronunciatio": "\ud83d\udf6b\ud83e\udd17",
+      "description": "Here is the completed hourly breakdown for Isabella Rodriguez's schedule on February 13th: (reviewing the kindergarten curriculum standards) @ the Ville:Isabella Rodriguez's apartment:main room:closet",
+      "chat": null
+    },
+    "Maria Lopez": {
+      "movement": [
+        122,
+        45
+      ],
+      "path": [
+        [
+          123,
+          56
+        ],
+        [
+          123,
+          55
+        ],
+        [
+          123,
+          54
+        ],
+        [
+          124,
+          54
+        ],
+        [
+          124,
+          53
+        ],
+        [
+          124,
+          52
+        ],
+        [
+          124,
+          51
+        ],
+        [
+          123,
+          51
+        ],
+        [
+          122,
+          51
+        ],
+        [
+          122,
+          50
+        ],
+        [
+          122,
+          49
+        ],
+        [
+          122,
+          48
+        ],
+        [
+          122,
+          47
+        ],
+        [
+          122,
+          46
+        ],
+        [
+          122,
+          45
+        ]
+      ],
+      "pronunciatio": "\ud83d\ude34",
+      "description": "sleeping @ the Ville:Dorm for Oak Hill College:kitchen:<random>",
+      "chat": null
+    },
+    "Klaus Mueller": {
+      "movement": [
+        121,
+        45
+      ],
+      "path": [
+        [
+          127,
+          46
+        ],
+        [
+          128,
+          46
+        ],
+        [
+          129,
+          46
+        ],
+        [
+          130,
+          46
+        ],
+        [
+          131,
+          46
+        ],
+        [
+          131,
+          47
+        ],
+        [
+          131,
+          48
+        ],
+        [
+          131,
+          49
+        ],
+        [
+          131,
+          50
+        ],
+        [
+          130,
+          50
+        ],
+        [
+          129,
+          50
+        ],
+        [
+          128,
+          50
+        ],
+        [
+          127,
+          50
+        ],
+        [
+          126,
+          50
+        ],
+        [
+          125,
+          50
+        ],
+        [
+          124,
+          50
+        ],
+        [
+          123,
+          50
+        ],
+        [
+          122,
+          50
+        ],
+        [
+          122,
+          49
+        ],
+        [
+          122,
+          48
+        ],
+        [
+          122,
+          47
+        ],
+        [
+          122,
+          46
+        ],
+        [
+          121,
+          46
+        ],
+        [
+          121,
+          45
+        ]
+      ],
+      "pronunciatio": "\ud83d\udd52\ud83d\udcbc",
+      "description": "I'll continue with the hourly schedule for Klaus Mueller on Friday, February 13. Here's the completed breakdown: @ the Ville:Dorm for Oak Hill College:kitchen:kitchen sink",
+      "chat": null
+    }
+  },
+  "meta": {
+    "curr_time": "February 13, 2026, 08:00:00"
+  }
+}

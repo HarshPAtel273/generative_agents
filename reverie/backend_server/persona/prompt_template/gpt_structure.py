@@ -105,9 +105,14 @@ def GPT4_safe_generate_response(prompt,
 
     try: 
       curr_gpt_response = GPT4_request(prompt).strip()
+      # Local models often wrap JSON in prose or code fences; extract the
+      # outermost {...} block before parsing.
+      start_index = curr_gpt_response.find('{')
       end_index = curr_gpt_response.rfind('}') + 1
-      curr_gpt_response = curr_gpt_response[:end_index]
+      curr_gpt_response = curr_gpt_response[start_index:end_index]
       curr_gpt_response = json.loads(curr_gpt_response)["output"]
+      if not isinstance(curr_gpt_response, str):
+        curr_gpt_response = json.dumps(curr_gpt_response)
       
       if func_validate(curr_gpt_response, prompt=prompt): 
         return func_clean_up(curr_gpt_response, prompt=prompt)
@@ -145,9 +150,14 @@ def ChatGPT_safe_generate_response(prompt,
 
     try: 
       curr_gpt_response = ChatGPT_request(prompt).strip()
+      # Local models often wrap JSON in prose or code fences; extract the
+      # outermost {...} block before parsing.
+      start_index = curr_gpt_response.find('{')
       end_index = curr_gpt_response.rfind('}') + 1
-      curr_gpt_response = curr_gpt_response[:end_index]
+      curr_gpt_response = curr_gpt_response[start_index:end_index]
       curr_gpt_response = json.loads(curr_gpt_response)["output"]
+      if not isinstance(curr_gpt_response, str):
+        curr_gpt_response = json.dumps(curr_gpt_response)
 
       # print ("---ashdfaf")
       # print (curr_gpt_response)
